@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Proyecto Enzo | Interfaz Científica</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00e5ff;
+            --bg-color: #05050a;
+            --glass-bg: rgba(10, 10, 20, 0.85);
+            --glass-border: rgba(0, 229, 255, 0.3);
+        }
+
+        body, html {
+            margin: 0; padding: 0; height: 100%; width: 100%;
+            background-color: var(--bg-color);
+            color: #e0e0e0;
+            font-family: 'Montserrat', sans-serif;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        /* Lluvia de código binario de fondo */
+        #matrix-bg {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 0; opacity: 0.25; pointer-events: none;
+        }
+
+        .game-container {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100vh; width: 100vw; padding: 20px; box-sizing: border-box;
+            text-align: center; position: relative; z-index: 10;
+        }
+
+        /* Pantallas de cristal moderno */
+        .screen {
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            width: 100%; height: 100%; max-width: 750px;
+            background: var(--glass-bg); border-radius: 12px;
+            padding: 30px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            border: 1px solid var(--glass-border); 
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        .active { display: flex; }
+
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(15px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+
+        /* Títulos Normales pero Chéveres */
+        h1 { 
+            font-family: 'Orbitron', sans-serif; color: var(--primary); font-size: 2rem; 
+            letter-spacing: 2px; margin: 0 0 20px 0; font-weight: 700;
+            text-shadow: 0 0 12px rgba(0, 229, 255, 0.6);
+            text-transform: uppercase;
+        }
+
+        .alert-title { color: #ff3366; text-shadow: 0 0 12px rgba(255, 51, 102, 0.6); }
+
+        p { font-size: 1.05rem; line-height: 1.7; margin: 0 0 20px 0; color: #dcdcdc;}
+
+        /* Botones chéveres */
+        .btn {
+            background: rgba(0, 229, 255, 0.1); border: 2px solid var(--primary); color: var(--primary);
+            padding: 12px 25px; font-family: 'Orbitron', sans-serif; font-size: 1rem;
+            cursor: pointer; text-transform: uppercase; font-weight: 600;
+            letter-spacing: 1px; border-radius: 6px; 
+            transition: all 0.3s ease; margin-top: 15px; outline: none;
+        }
+        .btn:hover, .btn:active { 
+            background: var(--primary); color: #000; box-shadow: 0 0 15px rgba(0,229,255,0.7); 
+            transform: scale(1.05);
+        }
+        .btn-danger {
+            border-color: #ff3366; color: #ff3366; background: rgba(255, 51, 102, 0.1);
+        }
+        .btn-danger:hover, .btn-danger:active { 
+            background: #ff3366; color: #fff; box-shadow: 0 0 15px rgba(255,51,102,0.7); 
+        }
+
+        /* Iconos animados */
+        .icon-large { 
+            font-size: 4.5rem; margin: 15px; display: inline-block; 
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); filter: drop-shadow(0 0 10px rgba(0,229,255,0.5));}
+            50% { transform: translateY(-10px); filter: drop-shadow(0 0 20px rgba(0,229,255,0.8));}
+        }
+        .icon-danger { animation: pulse-danger 1s infinite alternate; filter: drop-shadow(0 0 10px #ff3366); }
+        @keyframes pulse-danger { to { transform: scale(1.1); filter: drop-shadow(0 0 25px #ff3366); } }
+        
+        /* Minijuego La Ignorancia */
+        .arena {
+            width: 100%; max-width: 400px; height: 35vh; min-height: 250px;
+            background: rgba(255, 51, 102, 0.05); border: 2px dashed rgba(255, 51, 102, 0.4); 
+            border-radius: 8px; position: relative; overflow: hidden; margin-bottom: 20px;
+        }
+        #anomaly {
+            font-size: 3.5rem; position: absolute; top: 50%; left: 50%;
+            transition: all 0.2s linear; cursor: crosshair; user-select: none;
+            filter: drop-shadow(0px 0px 10px #ff3366);
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        /* Nodos */
+        .nodes-container { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 20px;}
+        .node { 
+            width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;
+            font-size: 2.2rem; cursor: pointer; transition: all 0.3s; 
+            background: rgba(0, 229, 255, 0.05); border-radius: 50%; 
+            border: 2px solid rgba(0, 229, 255, 0.4);
+        }
+        .node:hover { background: rgba(0, 229, 255, 0.2); transform: scale(1.1); box-shadow: 0 0 15px rgba(0,229,255,0.5); }
+        .node-active { opacity: 0.2; pointer-events: none; filter: grayscale(100%); border-color: #444; box-shadow: none;}
+        
+        /* Contenedor de Video */
+        .video-wrapper {
+            position: relative; padding-bottom: 56.25%; height: 0;
+            width: 100%; max-width: 650px; border-radius: 8px; overflow: hidden;
+            border: 2px solid var(--primary); margin: 0 auto 20px auto;
+            box-shadow: 0 0 20px rgba(0,229,255,0.3);
+        }
+        .video-wrapper iframe {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;
+        }
+
+        /* Carta */
+        .letter-box {
+            background: rgba(0, 0, 0, 0.4); border-left: 4px solid var(--primary);
+            padding: 20px; width: 100%; text-align: left; box-sizing: border-box;
+            border-radius: 0 8px 8px 0; margin-bottom: 20px;
+        }
+        .letter-box p { font-size: 0.95rem; margin-bottom: 12px; color: #ddd; line-height: 1.6;}
+        .letter-box h2 { 
+            color: #fff; font-size: 1.2rem; text-align: left; margin: 0 0 15px 0; 
+            font-family: 'Orbitron', sans-serif; letter-spacing: 1px;
+            border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px;
+        }
+        
+        /* Einstein Pixel Art Módulo */
+        .einstein-container {
+            margin-top: 20px; cursor: pointer; transition: transform 0.2s;
+            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 15px; border-radius: 8px; width: 100%; box-sizing: border-box;
+        }
+        .einstein-container:hover { background: rgba(255, 255, 255, 0.1); transform: scale(1.02); }
+        .pixel-art { font-size: 3.5rem; filter: drop-shadow(0 0 10px rgba(255,255,255,0.5)); margin-bottom: 10px; }
+        .einstein-quote {
+            display: none; border-top: 1px solid rgba(255, 255, 255, 0.2);
+            padding-top: 15px; margin-top: 10px; text-align: center;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        .einstein-quote p { color: #fff; font-style: italic; font-size: 1rem; margin-bottom: 10px;}
+        .einstein-quote .author { color: var(--primary); font-family: 'Orbitron', sans-serif; font-size: 0.85rem; font-weight: bold;}
+
+        /* Scroll */
+        .scrollable { overflow-y: auto; padding-right: 10px; justify-content: flex-start; padding-top: 30px;}
+        .scrollable::-webkit-scrollbar { width: 6px; }
+        .scrollable::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 10px;}
+        .scrollable::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <canvas id="matrix-bg"></canvas>
+
+    <div class="game-container">
+        
+        <div id="screen-0" class="screen active">
+            <h1>PROYECTO: ENZO</h1>
+            <div class="icon-large">🌌</div>
+            <p>Iniciando sistema cognitivo...<br><br>Bienvenido, Enzo. Hemos preparado este entorno virtual seguro para encriptar un mensaje sobre la ciencia, la curiosidad y nuestra amistad.</p>
+            <button class="btn" onclick="nextScreen(1)">INICIAR SECUENCIA</button>
+        </div>
+
+        <div id="screen-1" class="screen">
+            <h1 class="alert-title">INTERFERENCIA DETECTADA</h1>
+            <div class="icon-large icon-danger">⚠️</div>
+            <p>Un virus informático conocido como <b>"La Ignorancia"</b> está bloqueando el archivo. Necesitamos tu inteligencia para eliminarlo.</p>
+            <button class="btn btn-danger" onclick="startMinigame()">ELIMINAR AMENAZA</button>
+        </div>
+
+        <div id="screen-2" class="screen">
+            <h1 class="alert-title">SISTEMA COMPROMETIDO</h1>
+            <p style="font-size: 0.95rem;">Toca al monstruo 4 veces rápido para limpiar el sistema.</p>
+            
+            <div class="arena" id="arena">
+                <div id="anomaly" onclick="catchAnomaly()">👾</div>
+            </div>
+
+            <p id="msg-catch" style="color: #00e5ff; display: none; margin: 0; font-weight: bold;">¡AMENAZA ELIMINADA! 🛡️</p>
+            <button class="btn" id="btn-next-2" onclick="nextScreen(3)" style="display:none; margin-top: 15px;">CONTINUAR</button>
+        </div>
+
+        <div id="screen-3" class="screen">
+            <h1>RESTAURANDO SISTEMA</h1>
+            <p>Activa los tres nodos de procesamiento para reconstruir la información.</p>
+            
+            <div class="icon-large" id="core" style="transition: all 0.5s; margin: 10px;">💠</div>
+            
+            <div class="nodes-container" id="nodes-box">
+                <div class="node" onclick="activateNode(this)">💡</div>
+                <div class="node" onclick="activateNode(this)">🔬</div>
+                <div class="node" onclick="activateNode(this)">🤝</div>
+            </div>
+
+            <p id="msg-core" style="color: #00e5ff; display: none; margin-top: 20px; font-weight: bold;">ACCESO CONCEDIDO AL 100%</p>
+            <button class="btn" id="btn-next-3" onclick="nextScreen(4)" style="display:none; margin-top: 15px;">ABRIR ARCHIVO</button>
+        </div>
+
+        <div id="screen-4" class="screen scrollable">
+            <h1>ARCHIVO DESENCRIPTADO</h1>
+            
+            <div class="video-wrapper">
+                <iframe src="https://www.youtube.com/embed/9MCiixIkzUk" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+            </div>
+
+            <div class="letter-box">
+                <h2>>> MENSAJE ENTRANTE</h2>
+                <p>Hola Enzo ¿cómo has estado? ¿te gustó esta carta interactiva web? Sé que te gusta la ciencia, y como eres alguien muy curioso e imaginativo, quise hacerte esto.</p>
+                <p>Me gusta que eres alguien real que no tiene miedo a ser juzgado y expresa sus pensamientos, para mí eso sería impensable y más a esta edad.</p>
+                <p>Te agradezco que me hubieras acompañado tanto tiempo y cuando estaba solo pues soy alguien de pocos amigos. Te conozco desde hace varios años y fue increíble los cursos que pasamos juntos con Jonatán y Jerson.</p>
+                <p>Me gusta también que eres muy curioso, divertido y amable, espero que te vaya super bien en tus objetivos y logres ser un científico o lo que te propongas hacer.</p>
+                <p style="color: var(--primary); font-family: 'Orbitron', sans-serif; font-weight: bold; margin-bottom: 0;">¡GRACIAS POR SER MI AMIGO :v !</p>
+            </div>
+
+            <div class="einstein-container" onclick="showEinstein()">
+                <div class="pixel-art" id="einstein-icon">👨🏻‍🔬</div>
+                <p id="einstein-hint" style="margin: 0; font-family: 'Share Tech Mono', monospace; font-size: 0.9rem; color: #a0d8ef;">[ TOCAR PARA REVELAR MENSAJE OCULTO ]</p>
+                
+                <div class="einstein-quote" id="einstein-quote">
+                    <p>"La imaginación es más importante que el conocimiento. El conocimiento es limitado, mientras que la imaginación da la vuelta al mundo."</p>
+                    <p class="author">— Albert Einstein</p>
+                </div>
+            </div>
+
+            <button class="btn" onclick="resetGame()" style="margin: 30px auto; border-color: #555; color: #aaa; background: transparent; display: block;">VOLVER A EMPEZAR</button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- LLUVIA MATRIX (NÚMEROS 0 y 1) ---
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+        
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const chars = '01'.split('');
+        const fontSize = 16; 
+        let columns = canvas.width / fontSize;
+        let drops = [];
+        for(let x = 0; x < columns; x++) drops[x] = 1;
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(5, 5, 10, 0.08)'; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = '#00e5ff'; 
+            ctx.font = fontSize + 'px "Share Tech Mono", monospace';
+            
+            for(let i = 0; i < drops.length; i++) {
+                const text = chars[Math.floor(Math.random() * chars.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                
+                if(drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 40);
+
+        // --- NAVEGACIÓN ---
+        function nextScreen(num) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('screen-' + num).classList.add('active');
+            if(num === 4) document.getElementById('screen-4').scrollTop = 0;
+        }
+
+        // --- MINIJUEGO: ELIMINAR IGNORANCIA ---
+        let anomalyClicks = 0;
+        let moveInterval;
+        const anomaly = document.getElementById('anomaly');
+        const arena = document.getElementById('arena');
+
+        function startMinigame() {
+            nextScreen(2);
+            anomalyClicks = 0;
+            anomaly.innerHTML = "👾"; 
+            anomaly.style.filter = "drop-shadow(0px 0px 10px #ff3366)";
+            document.getElementById('msg-catch').style.display = 'none';
+            document.getElementById('btn-next-2').style.display = 'none';
+            anomaly.style.transform = "translate(0px, 0px) scale(1)";
+            
+            moveInterval = setInterval(moveAnomaly, 650);
+            moveAnomaly();
+        }
+
+        function moveAnomaly() {
+            if(anomalyClicks >= 4) return;
+            const arenaRect = arena.getBoundingClientRect();
+            const maxX = arenaRect.width - 60;
+            const maxY = arenaRect.height - 60; 
+            
+            const randomX = Math.max(10, Math.floor(Math.random() * maxX));
+            const randomY = Math.max(10, Math.floor(Math.random() * maxY));
+            
+            anomaly.style.left = randomX + "px";
+            anomaly.style.top = randomY + "px";
+        }
+
+        function catchAnomaly() {
+            if(anomalyClicks >= 4) return;
+            anomalyClicks++;
+            
+            anomaly.style.filter = "brightness(2) sepia(1) hue-rotate(180deg)";
+            setTimeout(() => {
+                if(anomalyClicks < 4) anomaly.style.filter = "drop-shadow(0px 0px 10px #ff3366)";
+            }, 100);
+
+            if (anomalyClicks >= 4) {
+                clearInterval(moveInterval);
+                anomaly.innerHTML = "✔️"; 
+                anomaly.style.filter = "drop-shadow(0px 0px 15px #00e5ff)";
+                anomaly.style.left = "50%";
+                anomaly.style.top = "50%";
+                anomaly.style.transform = "translate(-50%, -50%) scale(1.3)";
+                document.getElementById('msg-catch').style.display = 'block';
+                document.getElementById('btn-next-2').style.display = 'inline-block';
+            }
+        }
+
+        // --- RESTAURAR NODOS ---
+        let nodesActive = 0;
+        function activateNode(el) {
+            if (!el.classList.contains('node-active')) {
+                el.classList.add('node-active');
+                nodesActive++;
+                
+                const core = document.getElementById('core');
+                core.style.transform = `scale(${1 + (nodesActive * 0.15)})`;
+                core.style.filter = `drop-shadow(0 0 ${nodesActive * 15}px #00e5ff)`;
+                
+                if (nodesActive === 3) {
+                    core.innerHTML = "🌐";
+                    document.getElementById('nodes-box').style.display = "none";
+                    document.getElementById('msg-core').style.display = "block";
+                    document.getElementById('btn-next-3').style.display = "inline-block";
+                }
+            }
+        }
+
+        // --- HOLOGRAMA EINSTEIN ---
+        function showEinstein() {
+            document.getElementById('einstein-hint').style.display = "none";
+            document.getElementById('einstein-quote').style.display = "block";
+            document.getElementById('einstein-icon').innerHTML = "🧠"; // Cambia al abrirlo
+        }
+
+        // --- REINICIAR ---
+        function resetGame() {
+            clearInterval(moveInterval);
+            nodesActive = 0;
+            document.querySelectorAll('.node').forEach(el => {
+                el.classList.remove('node-active');
+            });
+            document.getElementById('nodes-box').style.display = "flex";
+            document.getElementById('msg-core').style.display = "none";
+            document.getElementById('btn-next-3').style.display = "none";
+            
+            const core = document.getElementById('core');
+            core.innerHTML = "💠";
+            core.style.transform = "scale(1)";
+            core.style.filter = "none";
+            
+            document.getElementById('einstein-hint').style.display = "block";
+            document.getElementById('einstein-quote').style.display = "none";
+            document.getElementById('einstein-icon').innerHTML = "👨🏻‍🔬";
+
+            nextScreen(0);
+        }
+    </script>
+</body>
+</html>
